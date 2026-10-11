@@ -113,13 +113,43 @@ export class OrderService {
     }
 
     order.status = OrderStatus.COMPLETED;
-    // Đơn COD coi như đã thu tiền khi khách xác nhận nhận hàng
     if (order.payment_method === PaymentMethod.COD) {
       order.payment_status = PaymentStatus.PAID;
     }
     return this.orderRepo.save(order);
   }
 
+  async cancelByBuyer(buyerId: number, orderId: number) {
+  return this.dataSource.transaction(async (manager) => {
+    // Khóa dòng đơn để hai lần bấm hủy cùng lúc không hoàn kho 2 lần
+    const order = await manager.findOne(Order, {
+      where: { id: orderId, buyer_id: buyerId },
+      lock: { mode: 'pessimistic_write' },
+    });
+    if (!order) throw new NotFoundException('Không tìm thấy đơn hàng');
+
+    if (order.status !== OrderStatus.PENDING) {
+      throw new BadRequestException('Chỉ có thể hủy đơn đang chờ duyệt');
+    }
+    if (order.payment_status === PaymentStatus.PAID) {
+      throw new BadRequestException(
+        'Đơn đã thanh toán online, vui lòng liên hệ cửa hàng để được hoàn tiền',
+      );
+    }
+
+    const details = await manager.find(OrderDetail, {
+      where: { order: { id: orderId } },
+      relations: { batch: true },
+    });
+    for (const d of details) {
+      await manager.increment(Batch, { id: d.batch.id }, 'quantity', d.quantity);
+    }
+
+    order.status = OrderStatus.CANCELLED;
+    return manager.save(order);
+  });
+}
+//Admin
   async findAllAdmin(status?: string) {
     if (status && !Object.values(OrderStatus).includes(status as OrderStatus)) {
       throw new BadRequestException('Trạng thái không hợp lệ');
@@ -154,6 +184,7 @@ export class OrderService {
       })),
     }));
   }
+  //Seller
   async getSellerOrders(sellerId: number, status?: OrderStatus) {
     const qb = this.orderRepo
       .createQueryBuilder('o')
@@ -169,7 +200,6 @@ export class OrderService {
 
     const orders = await qb.getMany();
 
-    // details chỉ chứa các dòng hàng thuộc seller này (do inner join + where)
     return orders.map((o) => ({
       ...o,
       seller_total: o.details.reduce(
@@ -178,7 +208,7 @@ export class OrderService {
       ),
     }));
   }
-  // Đơn có chứa hàng của seller; details chỉ gồm các dòng thuộc seller này
+
   async findBySeller(sellerId: number, status?: string) {
     const qb = this.orderRepo
       .createQueryBuilder('o')
@@ -194,11 +224,10 @@ export class OrderService {
     const orders = await qb.getMany();
 
     return orders.map((o) => {
-      // details đã chỉ gồm các dòng hàng của seller này (do where trên join)
       const details = o.details.map((d) => ({
         id: d.id,
         order_id: o.id,
-        batch_id: d.batch.id, // frontend đọc d.batch_id
+        batch_id: d.batch.id, 
         quantity: d.quantity,
         price: Number(d.price),
       }));

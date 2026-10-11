@@ -27,6 +27,10 @@ export class OrderController {
   confirmReceived(@CurrentUser() user: any, @Param('id', ParseIntPipe) id: number) {
     return this.orderService.confirmReceived(Number(user.sub), id);
   }
+  @Put(':id/cancel')
+  cancelMyOrder(@CurrentUser() user: any, @Param('id', ParseIntPipe) id: number) {
+    return this.orderService.cancelByBuyer(Number(user.sub), id);
+  }
 
   @Get('seller')
   @Roles('seller')
