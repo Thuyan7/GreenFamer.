@@ -13,6 +13,8 @@ export interface Order {
     tracking_note?: string;
     created_at: string;
     seller_total?: number;
+    payment_method?: "COD" | "VNPay" ;
+    payment_status?: "Unpaid" | "Paid" | "Failed";
 }
 
 export interface OrderDetail {
@@ -31,7 +33,7 @@ export interface CheckoutPayload {
     receiverName: string;
     receiverPhone: string;
     shippingAddress: string;
-    paymentMethod?: "COD" | "ZaloPay" | "Momo"|"VNPay";
+    paymentMethod?: "COD" | "VNPay";
 }
 
 export interface CheckoutResponse {

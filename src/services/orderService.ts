@@ -55,6 +55,11 @@ export const orderService = {
         return response as unknown as Order;
     },
 
+    cancel: async (id: number): Promise<Order> => {
+        const response = await api.put(`/orders/${id}/cancel`);
+        return response as unknown as Order;
+    },
+
     getSellerOrders: async (status?: string): Promise<OrderWithDetails[]> => {
         const response = await api.get("/orders/seller", { params: { status } });
         return response as unknown as OrderWithDetails[];
