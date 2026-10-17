@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { useFetch } from "@/hooks/useFetch";
 import { farmService } from "@/services/farmService";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -21,7 +21,11 @@ export default function FarmProfilePage() {
     const [coverPreview, setCoverPreview] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
-    const [message, setMessage] = useState("");
+    // Trang tạo trang trại gửi kèm thông báo khi chuyển sang đây
+    const location = useLocation();
+    const [message, setMessage] = useState<string>(
+        (location.state as { message?: string } | null)?.message ?? ""
+    );
 
     useEffect(() => {
         if (farm) {

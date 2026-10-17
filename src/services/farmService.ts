@@ -5,6 +5,7 @@ import type {
     FarmDetail,
     FarmListItem,
     FarmImageItem,
+    FarmPayload,
     MyFarmProfile,
 } from "@/types/farm.ts";
 
@@ -71,6 +72,12 @@ export const farmService = {
             cover: images.filter((i: any) => i.image_type === "Farm").map(toItem)[0] ?? null,
             certificates: images.filter((i: any) => i.image_type === "Certifi").map(toItem),
         };
+    },
+
+    // Seller: tạo trang trại mới (chủ trang trại lấy từ tài khoản, trạng thái ban đầu là chờ duyệt)
+    createFarm: async (payload: FarmPayload): Promise<{ id: number }> => {
+        const response: any = await api.post("/seller/farms", payload);
+        return response.data;
     },
 
     // Seller: cập nhật thông tin farm

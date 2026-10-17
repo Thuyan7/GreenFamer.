@@ -5,8 +5,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(value: number): string {
-  return (value ?? 0).toLocaleString("vi-VN") + "₫";
+export function formatCurrency(value: number | string | null | undefined) {
+  const n = Number(value ?? 0);
+  const safe = Number.isFinite(n) ? n : 0;
+  return `${safe.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}₫`;
 }
 
 export function formatDate(dateStr: string): string {

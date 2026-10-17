@@ -6,6 +6,7 @@ import {
 } from "react";
 
 import { cartService } from "@/services/cartService";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface CartLine {
     cart_id: number;
@@ -49,14 +50,24 @@ export const CartContext =
     createContext<CartContextType | null>(null);
 
 export function CartProvider({
-    children,
-}: {
+                                 children,
+                             }: {
     children: ReactNode;
 }) {
+    const { user } = useAuth();
+    // Backend chỉ cho role "buyer" dùng giỏ hàng (CartController có @Roles('buyer'))
+    const isBuyer = user?.role === "buyer";
+
     const [items, setItems] = useState<CartLine[]>([]);
     const [loading, setLoading] = useState(false);
 
     const refreshCart = async () => {
+        // Chưa đăng nhập, hoặc là seller/admin: không gọi API (tránh lỗi 403)
+        if (!isBuyer) {
+            setItems([]);
+            return;
+        }
+
         try {
             setLoading(true);
 
@@ -84,10 +95,10 @@ export function CartProvider({
                         Number(item.batch.quantityAvailable),
 
                     farm_name:
-                        item.farmName,
+                    item.farmName,
 
                     batch_code:
-                        item.batch.batchCode,
+                    item.batch.batchCode,
                 }));
 
             setItems(mappedItems);
@@ -99,9 +110,11 @@ export function CartProvider({
         }
     };
 
+    // Tải giỏ khi đăng nhập bằng tài khoản khách; xóa giỏ cũ khi đăng xuất / đổi sang role khác
     useEffect(() => {
         refreshCart();
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isBuyer]);
 
     const addItem = async (
         batchId: number,
