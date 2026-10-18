@@ -7,7 +7,9 @@ export interface ApiResponse<T> {
 }
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL ?? `http://${window.location.hostname}:3000`,
+    // Mặc định gọi qua proxy của Vite (/api -> backend :3000), dùng được cho cả localhost lẫn địa chỉ IP trong mạng LAN.
+    // Khi triển khai thật, đặt VITE_API_URL thành địa chỉ API (ví dụ https://api.example.com).
+    baseURL: import.meta.env.VITE_API_URL ?? "/api",
 });
 
 api.interceptors.request.use((config) => {
